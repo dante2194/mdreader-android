@@ -1,6 +1,6 @@
 package com.mdreader.data.ai
 
-import kotlinx.serializable
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class AiPreset(

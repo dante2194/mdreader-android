@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -62,6 +63,12 @@ dependencies {
 
     // Local storage of recent files (lightweight, no Room for MVP)
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    // JSON serialization for settings/presets
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+
+    // HTTP client for AI (OpenRouter) integration
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

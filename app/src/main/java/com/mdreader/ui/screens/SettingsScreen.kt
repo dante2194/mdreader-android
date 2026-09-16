@@ -10,8 +10,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.mdreader.data.fonts.FontInfo
 import com.mdreader.data.fonts.FontRegistry
@@ -138,11 +142,13 @@ private fun FontRow(
                 .padding(start = 12.dp)
         )
         // Preview text in the font
+        val previewFontFamily = remember(font) {
+            if (font.name == "System") null
+            else runCatching { FontFamily(Font(FontRegistry(LocalContext.current).getTypeface(font))) }.getOrNull()
+        }
         Text(
             text = "The quick brown fox",
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontFamily = if (font.name == "System") null else font.name.toLowerCase().replace(" ", "")
-            ),
+            style = MaterialTheme.typography.bodyLarge.copy(fontFamily = previewFontFamily),
             modifier = Modifier.weight(1f, fill = false)
         )
         RadioButton(selected = isSelected, onClick = { onClick() })

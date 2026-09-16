@@ -4,9 +4,11 @@ import android.content.*
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
@@ -55,7 +57,7 @@ class MainActivity : ComponentActivity() {
             var screen by remember { mutableStateOf<Screen>(Screen.Library) }
             var isFullscreen by remember { mutableStateOf(false) }
 
-            val openDocument = rememberLauncherForOpenDocument { uri ->
+            val openDocument = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
                 if (uri != null) {
                     scope.launch { prefs.addRecentFile(uri.toString()) }
                     isFullscreen = false
@@ -150,7 +152,7 @@ class MainActivity : ComponentActivity() {
             }
         }
         val intent = Intent(this, TtsService::class.java)
-        bindService(intent, ttsServiceConnection, Context.BIND_AUTO_CREATE)
+        ttsServiceConnection?.let { bindService(intent, it, Context.BIND_AUTO_CREATE) }
     }
 
     override fun onDestroy() {

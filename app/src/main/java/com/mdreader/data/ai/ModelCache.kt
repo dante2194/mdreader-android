@@ -6,7 +6,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mdreader.data.repository.PrefsRepository
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 
 /**
@@ -28,7 +27,7 @@ class ModelCache(
     val error: LiveData<String?> = _error
 
     // User preference: show only free models?
-    private val _showFreeOnly = MutableLiveData<true>
+    private val _showFreeOnly = MutableLiveData<Boolean>(true)
     val showFreeOnly: LiveData<Boolean> = _showFreeOnly
 
     init {

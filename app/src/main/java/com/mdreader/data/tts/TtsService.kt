@@ -8,6 +8,8 @@ import android.os.IBinder
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.mdreader.MainActivity
+import com.mdreader.R
 import com.mdreader.data.repository.PrefsRepository
 
 /**

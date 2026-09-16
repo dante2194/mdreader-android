@@ -10,13 +10,12 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.mdreader.ui.theme.AppTheme
 import com.mdreader.data.ai.AiPreset
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.Json
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.builders.list
-import kotlinx.serialization.serializer
+import kotlinx.serialization.json.Json
 
 private val Context.dataStore by preferencesDataStore(name = "mdreader_prefs")
 
@@ -38,6 +37,7 @@ class PrefsRepository(private val context: Context) {
         val TTS_RATE = floatPreferencesKey("tts_rate")
         val TTS_PITCH = floatPreferencesKey("tts_pitch")
         val TTS_BACKGROUND = intPreferencesKey("tts_background") // 0=off, 1=on
+        val RECENT_FILES = stringSetPreferencesKey("recent_files")
     }
 
     // Existing flows
@@ -55,6 +55,10 @@ class PrefsRepository(private val context: Context) {
 
     val importedFonts: Flow<Set<String>> = context.dataStore.data.map { prefs ->
         prefs[Keys.IMPORTED_FONTS] ?: emptySet()
+    }
+
+    val recentFiles: Flow<List<String>> = context.dataStore.data.map { prefs ->
+        prefs[Keys.RECENT_FILES]?.toList() ?: emptyList()
     }
 
     val apiKey: Flow<String?> = context.dataStore.data.map { prefs ->
@@ -115,7 +119,15 @@ class PrefsRepository(private val context: Context) {
             } else {
                 current.remove(fileName)
             }
-            it[Keys.IMPORTED_FONTS] = current
+            prefs[Keys.IMPORTED_FONTS] = current
+        }
+    }
+
+    suspend fun addRecentFile(uri: String) {
+        context.dataStore.edit { prefs ->
+            val current = prefs[Keys.RECENT_FILES]?.toMutableSet() ?: mutableSetOf()
+            current.add(uri)
+            prefs[Keys.RECENT_FILES] = current
         }
     }
 
@@ -164,12 +176,13 @@ class PrefsRepository(private val context: Context) {
     // We'll store a JSON map: uriHash -> { fraction, wordOffset, totalWords, updatedAt }
     private val PROGRESS_MAP = stringPreferencesKey("progress_map")
 
+    @Serializable
     private data class ProgressRecord(
         val fraction: Float, // scroll fraction (0-1)
         val wordOffset: Int, // word index at which to resume
         val totalWords: Int, // total words in the document (for progress calculation)
         val updatedAt: Long  // timestamp
-    ) : Serializable
+    )
 
     suspend fun saveProgress(uri: String, fraction: Float, wordOffset: Int, totalWords: Int) {
         val hash = uri.hashCode().toString()
@@ -182,7 +195,7 @@ class PrefsRepository(private val context: Context) {
                 mapOf()
             }
             val updated = map + (hash to record)
-            it[PROGRESS_MAP] = Json.encodeToString(updated)
+            prefs[PROGRESS_MAP] = Json.encodeToString(updated)
         }
     }
 

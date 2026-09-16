@@ -4,16 +4,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.progressbar.SnapIndeterminateProgressBarMode
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mdreader.data.repository.PrefsRepository
+import kotlin.math.ceil
 
 /**
  * Home screen: a button to open a markdown file, and a simple list
@@ -63,7 +63,9 @@ fun LibraryScreen(
                 Spacer(Modifier.height(8.dp))
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     items(recentFiles.reversed()) { uriString ->
-                        val (wordOffset, totalWords) = prefs.getRecentFileProgress(uriString) ?: Pair(0, 0)
+                        var progress by remember(uriString) { mutableStateOf<Pair<Int, Int>?>(null) }
+                        LaunchedEffect(uriString) { progress = prefs.getRecentFileProgress(uriString) }
+                        val (wordOffset, totalWords) = progress ?: Pair(0, 0)
                         val percentRead = if (totalWords > 0) (wordOffset * 100 / totalWords) else 0
                         val pagesRead = ceil(wordOffset / 400.0).toInt()
                         val totalPages = ceil(totalWords / 400.0).toInt()

@@ -52,7 +52,7 @@ class FontRegistry(private val context: Context) {
         } ?: emptyArray()
         importedFonts = files.map { file ->
             FontInfo(
-                name = file.nameWithoutExtension.replace('_', ' ').titlecase(),
+                name = file.nameWithoutExtension.replace('_', ' ').replaceFirstChar { it.titlecase() },
                 fileName = file.name,
                 isBundled = false
             )

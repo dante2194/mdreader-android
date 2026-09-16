@@ -5,6 +5,7 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import com.mdreader.data.repository.PrefsRepository
+import kotlinx.coroutines.flow.first
 import java.util.Locale
 
 /**
