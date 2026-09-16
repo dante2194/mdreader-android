@@ -76,7 +76,8 @@ fun SettingsScreen(
 
             Text("Font", style = MaterialTheme.typography.titleMedium)
             // Font picker
-            val fontRegistry = remember { FontRegistry(LocalContext.current) }
+            val context = LocalContext.current
+            val fontRegistry = remember { FontRegistry(context) }
             LazyColumn(
                 modifier = Modifier.fillMaxWidth()
             ) {
