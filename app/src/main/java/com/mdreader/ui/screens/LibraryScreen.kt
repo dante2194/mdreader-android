@@ -1,15 +1,10 @@
 package com.mdreader.ui.screens
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.progressbar.SnapIndeterminateProgressBarMode
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FolderOpen
@@ -18,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.mdreader.data.repository.PrefsRepository
 
 /**
  * Home screen: a button to open a markdown file, and a simple list
@@ -29,6 +25,7 @@ fun LibraryScreen(
     onOpenFilePicker: () -> Unit,
     onOpenRecent: (String) -> Unit,
     onOpenSettings: () -> Unit,
+    prefs: PrefsRepository // Passed to get progress
 ) {
     Scaffold(
         topBar = {
@@ -66,18 +63,66 @@ fun LibraryScreen(
                 Spacer(Modifier.height(8.dp))
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     items(recentFiles.reversed()) { uriString ->
-                        ListItem(
-                            headlineContent = { Text(uriString.substringAfterLast('/')) },
-                            leadingContent = {
-                                Icon(Icons.Filled.Description, contentDescription = null)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onOpenRecent(uriString) }
+                        val (wordOffset, totalWords) = prefs.getRecentFileProgress(uriString) ?: Pair(0, 0)
+                        val percentRead = if (totalWords > 0) (wordOffset * 100 / totalWords) else 0
+                        val pagesRead = ceil(wordOffset / 400.0).toInt()
+                        val totalPages = ceil(totalWords / 400.0).toInt()
+                        RecentFileItem(
+                            uriString = uriString,
+                            wordOffset = wordOffset,
+                            totalWords = totalWords,
+                            percentRead = percentRead,
+                            pagesRead = pagesRead,
+                            totalPages = totalPages,
+                            onClick = { onOpenRecent(uriString) }
                         )
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun RecentFileItem(
+    uriString: String,
+    wordOffset: Int,
+    totalWords: Int,
+    percentRead: Int,
+    pagesRead: Int,
+    totalPages: Int,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 8.dp)
+    ) {
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = uriString.substringAfterLast('/'),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Page $pagesRead of $totalPages • $percentRead% read",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        // Progress bar
+        LinearProgressIndicator(
+            modifier = Modifier
+                .width(120.dp)
+                .height(4.dp),
+            progress = percentRead / 100f
+        )
+        // Page info
+        Text(
+            text = "$pagesRead/$totalPages",
+            modifier = Modifier.padding(start = 8.dp),
+            style = MaterialTheme.typography.labelSmall
+        )
     }
 }

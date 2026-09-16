@@ -1,8 +1,11 @@
 package com.mdreader
 
+import android.content.*
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.service.notification.StatusBarNotification
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,6 +18,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.mdreader.data.local.FileReader
 import com.mdreader.data.repository.PrefsRepository
+import com.mdreader.data.tts.TtsService
 import com.mdreader.ui.screens.LibraryScreen
 import com.mdreader.ui.screens.ReaderScreen
 import com.mdreader.ui.screens.SettingsScreen
@@ -30,20 +34,25 @@ private sealed class Screen {
 class MainActivity : ComponentActivity() {
 
     private lateinit var prefs: PrefsRepository
+    private var ttsServiceBinder: TtsService.LocalBinder? = null
+    private var ttsServiceConnection: ServiceConnection? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, true) // default: normal chrome, fullscreen is opt-in
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         prefs = PrefsRepository(applicationContext)
+
+        // Bind to TTS service
+        bindTtsService()
 
         setContent {
             val scope = rememberCoroutineScope()
             val theme by prefs.theme.collectAsState(initial = com.mdreader.ui.theme.AppTheme.SYSTEM)
             val fontSize by prefs.fontSize.collectAsState(initial = 16f)
+            val fontName by prefs.fontName.collectAsState(initial = null)
             val recentFiles by prefs.recentFiles.collectAsState(initial = emptyList())
 
             var screen by remember { mutableStateOf<Screen>(Screen.Library) }
-            // Fullscreen starts OFF every time a document is opened, by design.
             var isFullscreen by remember { mutableStateOf(false) }
 
             val openDocument = rememberLauncherForOpenDocument { uri ->
@@ -69,6 +78,7 @@ class MainActivity : ComponentActivity() {
                                 screen = Screen.Reader(Uri.parse(uriString))
                             },
                             onOpenSettings = { screen = Screen.Settings },
+                            prefs = prefs
                         )
 
                         is Screen.Reader -> {
@@ -82,21 +92,31 @@ class MainActivity : ComponentActivity() {
                                 title = title,
                                 content = content,
                                 fontSizeSp = fontSize,
+                                fontName = fontName,
                                 isFullscreen = isFullscreen,
                                 onToggleFullscreen = { isFullscreen = !isFullscreen },
                                 onBack = {
                                     isFullscreen = false
                                     screen = Screen.Library
                                 },
+                                onWordTap = { word, wordIndex ->
+                                    // Handle word tap: show toolbar (already handled in ReaderScreen via callback)
+                                    // We'll also save the word index for TTS start
+                                    // For now, just log
+                                    Log.d("MainActivity", "Word tapped: $word at index $wordIndex")
+                                },
+                                ttsServiceBinder = ttsServiceBinder
                             )
                         }
 
                         is Screen.Settings -> SettingsScreen(
                             currentTheme = theme,
                             fontSize = fontSize,
+                            fontName = fontName,
                             onThemeChange = { newTheme -> scope.launch { prefs.setTheme(newTheme) } },
                             onFontSizeChange = { newSize -> scope.launch { prefs.setFontSize(newSize) } },
-                            onBack = { screen = Screen.Library },
+                            onFontNameChange = { newName -> scope.launch { prefs.setFontName(newName) } },
+                            onBack = { screen = Screen.Library }
                         )
                     }
                 }
@@ -116,12 +136,25 @@ class MainActivity : ComponentActivity() {
             controller.show(WindowInsetsCompat.Type.systemBars())
         }
     }
-}
 
-@androidx.compose.runtime.Composable
-private fun rememberLauncherForOpenDocument(
-    onResult: (Uri?) -> Unit
-) = androidx.activity.compose.rememberLauncherForActivityResult(
-    contract = ActivityResultContracts.OpenDocument(),
-    onResult = onResult,
-)
+    private fun bindTtsService() {
+        ttsServiceConnection = object : ServiceConnection {
+            override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+                ttsServiceBinder = service as? TtsService.LocalBinder
+                Log.d("MainActivity", "TTS service connected")
+            }
+
+            override fun onServiceDisconnected(name: ComponentName?) {
+                ttsServiceBinder = null
+                Log.d("MainActivity", "TTS service disconnected")
+            }
+        }
+        val intent = Intent(this, TtsService::class.java)
+        bindService(intent, ttsServiceConnection, Context.BIND_AUTO_CREATE)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        ttsServiceConnection?.let { unbindService(it) }
+    }
+}

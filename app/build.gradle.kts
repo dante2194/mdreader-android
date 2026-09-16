@@ -58,7 +58,7 @@ dependencies {
 
     // Markdown rendering
     implementation("io.noties.markwon:core:4.6.2")
-    implementation("io.noties.markwon:html:4.6.2")
+    implementation("io.noties.markwon:html:4.6.2") // For HTML rendering and heading anchors
 
     // Local storage of recent files (lightweight, no Room for MVP)
     implementation("androidx.datastore:datastore-preferences:1.0.0")
