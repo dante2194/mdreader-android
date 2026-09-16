@@ -233,7 +233,6 @@ fun WordToolbar(
     // TODO: Implement actual toolbar
     Box(
         modifier = Modifier
-            .align(Alignment.TopStart)
             .offset(x = 16.dp, y = 16.dp)
             .background(MaterialTheme.colorScheme.surface, shape = MaterialTheme.shapes.medium)
             .padding(8.dp)

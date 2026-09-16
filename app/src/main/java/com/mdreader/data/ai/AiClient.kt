@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.annotation.WorkerThread
 import com.mdreader.data.repository.PrefsRepository
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
@@ -64,7 +65,7 @@ class AiClient(
      * @return the AI response text, or empty string on failure
      */
     @WorkerThread
-    fun getCompletion(prompt: String): String {
+    suspend fun getCompletion(prompt: String): String {
         val apiKey = prefs.apiKey.first() ?: return "Error: API key not set"
         val modelId = prefs.selectedModel.first() ?: return "Error: No model selected"
 
@@ -81,7 +82,7 @@ class AiClient(
             }
         """.trimIndent()
 
-        val body = RequestBody.create(requestBody, jsonMediaType)
+        val body = requestBody.toRequestBody(jsonMediaType)
         val request = Request.Builder()
             .url(apiEndpoint)
             .post(body)

@@ -14,7 +14,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.mdreader.data.fonts.FontInfo
@@ -77,10 +76,11 @@ fun SettingsScreen(
 
             Text("Font", style = MaterialTheme.typography.titleMedium)
             // Font picker
+            val fontRegistry = remember { FontRegistry(LocalContext.current) }
             LazyColumn(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(items = FontRegistry(LocalContext.current).bundledFonts) { font ->
+                items(items = fontRegistry.bundledFonts) { font ->
                     FontRow(
                         font = font,
                         isSelected = font.name == fontName,
@@ -142,10 +142,7 @@ private fun FontRow(
                 .padding(start = 12.dp)
         )
         // Preview text in the font
-        val previewFontFamily = remember(font) {
-            if (font.name == "System") null
-            else runCatching { FontFamily(Font(FontRegistry(LocalContext.current).getTypeface(font))) }.getOrNull()
-        }
+        val previewFontFamily = if (font.name == "System") null else FontFamily.Serif
         Text(
             text = "The quick brown fox",
             style = MaterialTheme.typography.bodyLarge.copy(fontFamily = previewFontFamily),

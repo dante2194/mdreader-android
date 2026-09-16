@@ -108,7 +108,9 @@ class PrefsRepository(private val context: Context) {
     }
 
     suspend fun setFontName(name: String?) {
-        context.dataStore.edit { it[Keys.FONT_NAME] = name }
+        context.dataStore.edit { prefs ->
+            if (name == null) prefs.remove(Keys.FONT_NAME) else prefs[Keys.FONT_NAME] = name
+        }
     }
 
     suspend fun setImportedFont(fileName: String, add: Boolean) {
@@ -132,13 +134,15 @@ class PrefsRepository(private val context: Context) {
     }
 
     suspend fun setApiKey(key: String?) {
-        context.dataStore.edit { it[Keys.API_KEY] = key }
+        context.dataStore.edit { prefs ->
+            if (key == null) prefs.remove(Keys.API_KEY) else prefs[Keys.API_KEY] = key
+        }
     }
 
     suspend fun setSelectedModel(modelId: String?, modelName: String?) {
-        context.dataStore.edit {
-            it[Keys.SELECTED_MODEL] = modelId
-            it[Keys.SELECTED_MODEL_NAME] = modelName
+        context.dataStore.edit { prefs ->
+            if (modelId == null) prefs.remove(Keys.SELECTED_MODEL) else prefs[Keys.SELECTED_MODEL] = modelId
+            if (modelName == null) prefs.remove(Keys.SELECTED_MODEL_NAME) else prefs[Keys.SELECTED_MODEL_NAME] = modelName
         }
     }
 
@@ -199,7 +203,7 @@ class PrefsRepository(private val context: Context) {
         }
     }
 
-    suspend fun loadProgress(uri: String): ProgressRecord? {
+    private suspend fun loadProgress(uri: String): ProgressRecord? {
         val hash = uri.hashCode().toString()
         return context.dataStore.data.map { prefs ->
             val json = prefs[PROGRESS_MAP]

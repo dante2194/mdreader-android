@@ -6,6 +6,7 @@ import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import com.mdreader.data.repository.PrefsRepository
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import java.util.Locale
 
 /**
@@ -66,8 +67,7 @@ class TtsEngine(
     }
 
     private fun updateSettings() {
-        val rate = prefs.ttsRate.first() ?: 1.0f
-        val pitch = prefs.ttsPitch.first() ?: 1.0f
+        val (rate, pitch) = runBlocking { prefs.ttsRate.first() to prefs.ttsPitch.first() }
         tts.setSpeechRate(rate)
         tts.setPitch(pitch)
     }
